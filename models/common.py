@@ -34,6 +34,17 @@ def autopad(k, p=None):  # kernel, padding
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
 
+class vggLayer(nn.Module):
+    def __init__(self, c1, c2, n=1, s=2): #chin, chout, block_nums, stride
+        super(vggLayer,self).__init__()
+        blocks=[nn.Conv2d(c1, c2, kernel_size=3, stride=1, padding=1, bias=True),nn.ReLU(inplace=True)]
+        for _ in range(n-1):
+            blocks+=[nn.Conv2d(c2, c2, kernel_size=3, stride=1, padding=1, bias=True),nn.ReLU(inplace=True)]
+        blocks.append(nn.MaxPool2d(kernel_size=2, stride=s, padding=0, dilation=1))
+        self.layers = nn.Sequential(*blocks)
+    def forward(self, x):
+        return self.layers(x)
+
 
 class Conv(nn.Module):
     # Standard convolution

@@ -263,9 +263,14 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
             except NameError:
                 pass
-
+  
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in (Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
+        vgg_n=n
+        if m is vggLayer:
+            c1=ch[f if f<0 else f+1] # input channel
+            c2=args[0] # output channel, defined in args of yaml file
+            args=[c1,c2,vgg_n,*args[1:]] # modify args as [ch_in, ch_out, num_blocks, stride]
+        elif m in (Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
                  BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x):
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
@@ -278,6 +283,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
+ 
             c2 = sum(ch[x] for x in f)
         elif m is Detect:
             args.append([ch[x] for x in f])
@@ -287,9 +293,12 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+
         else:
             c2 = ch[f]
-
+          
+        # print(f)
+        # print(ch)
         m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
         np = sum(x.numel() for x in m_.parameters())  # number params
